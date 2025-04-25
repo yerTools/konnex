@@ -1,0 +1,893 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Logo</title>
+    <style>
+      svg {
+        width: 128px;
+        height: 128px;
+        display: block;
+      }
+    </style>
+  </head>
+  <body>
+    <script>
+      function createKonnexSVG(
+        svgSize,
+        hexStrokeWidth,
+        hexagonScale,
+        cornerRoundness,
+        colored,
+        animationDurationSeconds,
+        animationDirection
+      ) {
+        const svgWidth = svgSize;
+        const svgHeight = svgSize;
+
+        hexagonScale = Math.min(hexagonScale, 1 - hexStrokeWidth / svgWidth);
+
+        // Hexagon base points (flat top)
+        const cos30Deg = Math.cos(Math.PI / 6);
+        const sin30Deg = Math.sin(Math.PI / 6);
+
+        const centerPoint = [svgWidth / 2, svgHeight / 2];
+
+        const topY = ((1 - hexagonScale * cos30Deg) / 2) * svgHeight;
+        const bottomY = svgHeight - topY;
+        const leftX = ((1 - hexagonScale * sin30Deg) / 2) * svgWidth;
+        const rightX = svgWidth - leftX;
+        const leftCenterX = ((1 - hexagonScale) / 2) * svgWidth;
+        const rightCenterX = svgWidth - leftCenterX;
+        const centerY = svgHeight * 0.5;
+
+        /**
+         * Berechnet die euklidische Distanz zwischen zwei Punkten oder die Länge eines Vektors.
+         *
+         * Beispiele:
+         *   calculateDistance([3, 4]);            // Rückgabe: 5
+         *   calculateDistance([1, 1], [4, 5]);    // Rückgabe: 5
+         *
+         * @param {[number,number]} p1 Erster Punkt oder Vektor [x, y].
+         * @param {[number,number]?} p2 Optionaler zweiter Punkt; wenn nicht angegeben, Distanz zum Ursprung.
+         * @returns {number} Euklidische Distanz.
+         */
+        function calculateDistance(p1, p2) {
+          if (p2 == null) {
+            return Math.hypot(p1[0], p1[1]);
+          }
+          return Math.hypot(p1[0] - p2[0], p1[1] - p2[1]);
+        }
+
+        /**
+         * Subtrahiert zwei Vektoren oder zieht einen Skalar von beiden Komponenten eines Vektors ab.
+         *
+         * Beispiele:
+         *   subtractVectors([5, 7], [2, 3]); // -> [3, 4]
+         *   subtractVectors([5, 7], 2);     // -> [3, 5]
+         *
+         * @param {[number,number]} a Ausgangsvektor [x, y].
+         * @param {[number,number] | number} b Anderer Vektor oder Skalar.
+         * @returns {[number,number]} Differenzvektor.
+         */
+        function subtractVectors(a, b) {
+          if (typeof b === "number") return [a[0] - b, a[1] - b];
+          return [a[0] - b[0], a[1] - b[1]];
+        }
+
+        /**
+         * Addiert zwei Vektoren oder addiert einen Skalar zu beiden Komponenten eines Vektors.
+         *
+         * Beispiele:
+         *   addVectors([1, 2], [3, 4]); // -> [4, 6]
+         *   addVectors([1, 2], 5);     // -> [6, 7]
+         *
+         * @param {[number,number]} a Ausgangsvektor [x, y].
+         * @param {[number,number] | number} b Anderer Vektor oder Skalar.
+         * @returns {[number,number]} Summenvektor.
+         */
+        function addVectors(a, b) {
+          if (typeof b === "number") return [a[0] + b, a[1] + b];
+          return [a[0] + b[0], a[1] + b[1]];
+        }
+
+        /**
+         * Multipliziert zwei Vektoren komponentenweise oder skaliert einen Vektor mit einem Skalar.
+         *
+         * Beispiele:
+         *   multiplyVectors([2, 3], [4, 5]); // -> [8, 15]
+         *   multiplyVectors([2, 3], 4);     // -> [8, 12]
+         *
+         * @param {[number,number]} a Ausgangsvektor [x, y].
+         * @param {[number,number] | number} b Anderer Vektor oder Skalar.
+         * @returns {[number,number]} Produktvektor.
+         */
+        function multiplyVectors(a, b) {
+          if (typeof b === "number") return [a[0] * b, a[1] * b];
+          return [a[0] * b[0], a[1] * b[1]];
+        }
+
+        /**
+         * Gibt einen normierten (Einheits-)Vektor in Richtung des Eingangsvektors zurück.
+         *
+         * Beispiel:
+         *   normalizeVector([3, 4]); // -> [0.6, 0.8]
+         *
+         * @param {[number,number]} a Ausgangsvektor [x, y].
+         * @returns {[number,number]} Normierter Vektor oder [0,0] bei Länge 0.
+         */
+        function normalizeVector(a) {
+          const length = calculateDistance(a);
+          return length === 0 ? [0, 0] : [a[0] / length, a[1] / length];
+        }
+
+        /**
+         * Berechnet das 2D-Skalarprodukt (Kreuzprodukt-Ebene) zweier Vektoren.
+         *
+         * Beispiel:
+         *   crossProduct([1, 2], [3, 4]); // -> (1*4 - 2*3) = -2
+         *
+         * @param {[number,number]} a Vektor A.
+         * @param {[number,number]} b Vektor B.
+         * @returns {number} Wert des 2D-Kreuzprodukts.
+         */
+        function crossProduct(a, b) {
+          return a[0] * b[1] - a[1] * b[0];
+        }
+
+        // Define hexagon corner points in clockwise order
+        /**
+         * Bestimmt die Eckpunkte eines flach-aufliegenden Sechsecks in Uhrzeigerrichtung.
+         * Diese Punkte basieren auf den berechneten Werten topY, bottomY, leftX, rightX,
+         * leftCenterX, rightCenterX und centerY, um ein gleichmäßiges Sechseck mit Skalierung zu erzeugen.
+         *
+         * cornerPts[0] = obere linke Ecke,
+         * cornerPts[1] = obere rechte Ecke,
+         * cornerPts[2] = rechte Mitte,
+         * cornerPts[3] = untere rechte Ecke,
+         * cornerPts[4] = untere linke Ecke,
+         * cornerPts[5] = linke Mitte.
+         */
+        const hexagonCornerPoints = [
+          [leftX, topY],
+          [rightX, topY],
+          [rightCenterX, centerY],
+          [rightX, bottomY],
+          [leftX, bottomY],
+          [leftCenterX, centerY],
+        ];
+
+        // Calculate maximum possible corner rounding radius
+        /**
+         * Berechnet den maximal möglichen Radius für die Abrundung jeder Ecke.
+         * hexagonSideLength: Länge einer Sechseckseite ohne Skalierung,
+         * maxCornerOffset:  Hälfte des Seitensegments, das abgerundet wird,
+         * cornerRadius: tatsächlich verwendeter Wert (kleiner gleich halbe Seitenlänge),
+         * arcRadius: in das SVG einzusetzender Kreisradius für Arc-Befehle.
+         */
+        const hexagonSideLength = (hexagonScale * svgWidth) / 2;
+        const maxCornerOffset = (hexagonSideLength * cornerRoundness) / 2;
+        const cornerRadius = Math.min(maxCornerOffset, hexagonSideLength / 2);
+        const arcRadius = cornerRadius * Math.sqrt(3);
+
+        let smoothingCircleRadius = 0;
+        /**
+         * Optional: Berechnung des Mittelpunkts und Radius eines Hilfskreises,
+         * um sanfte Übergänge (Rundungen) an den Ecken zu erzeugen.
+         */
+        if (cornerRoundness > 0) {
+          // Compute base points for corner smoothing
+          const beforeCornerPoint = addVectors(
+            hexagonCornerPoints[1],
+            multiplyVectors(
+              subtractVectors(hexagonCornerPoints[0], hexagonCornerPoints[1]),
+              cornerRoundness / 2
+            )
+          );
+          const afterCornerPoint = addVectors(
+            hexagonCornerPoints[1],
+            multiplyVectors(
+              subtractVectors(hexagonCornerPoints[2], hexagonCornerPoints[1]),
+              cornerRoundness / 2
+            )
+          );
+          // Directions of edges
+          const incomingDir = normalizeVector(
+            subtractVectors(hexagonCornerPoints[1], hexagonCornerPoints[0])
+          );
+          const outgoingDir = normalizeVector(
+            subtractVectors(hexagonCornerPoints[2], hexagonCornerPoints[1])
+          );
+          // Normals to edges
+          const normalIn = [incomingDir[1], -incomingDir[0]];
+          const normalOut = [outgoingDir[1], -outgoingDir[0]];
+          // Solve for circle center of smoothing arc
+          const diffVectors = subtractVectors(
+            afterCornerPoint,
+            beforeCornerPoint
+          );
+          const crossNormals = crossProduct(normalIn, normalOut);
+          const t = crossProduct(diffVectors, normalOut) / crossNormals;
+          const smoothingCenter = addVectors(
+            beforeCornerPoint,
+            multiplyVectors(normalIn, t)
+          );
+          smoothingCircleRadius = calculateDistance(
+            beforeCornerPoint,
+            smoothingCenter
+          );
+        }
+
+        /**
+         * Creates an SVG path string for a rounded polygon
+         * @param {[number, number][]} cornerPts Array von [x,y] Eckpunkten in Uhrzeigerrichtung
+         * @param {number} smoothRadius Radius für die Abrundung der Ecken
+         * @returns {string} SVG 'd' Pfad-String mit abgerundeten Ecken
+         */
+        function createRoundedPath(cornerPts, smoothRadius) {
+          const pointCount = cornerPts.length;
+          // Precompute tangent points A_i and B_i for each corner
+          const tangentPoints = cornerPts.map((corner, i) => {
+            const prev = cornerPts[(i + pointCount - 1) % pointCount];
+            const next = cornerPts[(i + 1) % pointCount];
+            const toPrev = subtractVectors(prev, corner);
+            const toNext = subtractVectors(next, corner);
+            const distToPrev = calculateDistance(toPrev);
+            const distToNext = calculateDistance(toNext);
+            const unitToPrev = [toPrev[0] / distToPrev, toPrev[1] / distToPrev];
+            const unitToNext = [toNext[0] / distToNext, toNext[1] / distToNext];
+            const arcStart = [
+              corner[0] + unitToPrev[0] * smoothRadius,
+              corner[1] + unitToPrev[1] * smoothRadius,
+            ];
+            const arcEnd = [
+              corner[0] + unitToNext[0] * smoothRadius,
+              corner[1] + unitToNext[1] * smoothRadius,
+            ];
+            return { start: arcStart, end: arcEnd };
+          });
+          // Compute arc center and midpoint for corner 0
+          const c0 = cornerPts[0];
+          const prev0 = cornerPts[pointCount - 1];
+          const next0 = cornerPts[1];
+          const before0 = addVectors(
+            c0,
+            multiplyVectors(subtractVectors(prev0, c0), cornerRoundness / 2)
+          );
+          const after0 = addVectors(
+            c0,
+            multiplyVectors(subtractVectors(next0, c0), cornerRoundness / 2)
+          );
+          const inDir0 = normalizeVector(subtractVectors(c0, prev0));
+          const outDir0 = normalizeVector(subtractVectors(next0, c0));
+          const normalIn0 = [inDir0[1], -inDir0[0]];
+          const normalOut0 = [outDir0[1], -outDir0[0]];
+          const diff0 = subtractVectors(after0, before0);
+          const crossNorm0 = crossProduct(normalIn0, normalOut0);
+          const t0 = crossProduct(diff0, normalOut0) / crossNorm0;
+          const center0 = addVectors(before0, multiplyVectors(normalIn0, t0));
+          const arc0 = tangentPoints[0];
+          const a0 = arc0.start;
+          const b0 = arc0.end;
+          let startAng = Math.atan2(a0[1] - center0[1], a0[0] - center0[0]);
+          let endAng = Math.atan2(b0[1] - center0[1], b0[0] - center0[0]);
+          let delta = endAng - startAng;
+          if (delta < 0) delta += Math.PI * 2;
+          const midAng = startAng + delta / 2;
+          const midPt = [
+            center0[0] + smoothingCircleRadius * Math.cos(midAng),
+            center0[1] + smoothingCircleRadius * Math.sin(midAng),
+          ];
+          // Build new path: start at midpoint of corner 0 arc
+          let pathD = `M ${midPt[0].toFixed(3)} ${midPt[1].toFixed(3)} `;
+          // first half-arc of corner 0
+          pathD += `A ${arcRadius.toFixed(3)} ${arcRadius.toFixed(
+            3
+          )} 0 0 1 ${b0[0].toFixed(3)} ${b0[1].toFixed(3)} `;
+          // draw full edges and arcs for corners 1..last
+          for (let i = 1; i < pointCount; i++) {
+            const { start, end } = tangentPoints[i];
+            pathD += `L ${start[0].toFixed(3)} ${start[1].toFixed(3)} `;
+            pathD += `A ${arcRadius.toFixed(3)} ${arcRadius.toFixed(
+              3
+            )} 0 0 1 ${end[0].toFixed(3)} ${end[1].toFixed(3)} `;
+          }
+          // close with straight to start of corner 0 and second half-arc back to midpoint
+          pathD += `L ${a0[0].toFixed(3)} ${a0[1].toFixed(3)} `;
+          pathD += `A ${arcRadius.toFixed(3)} ${arcRadius.toFixed(
+            3
+          )} 0 0 1 ${midPt[0].toFixed(3)} ${midPt[1].toFixed(3)} Z`;
+          return pathD;
+        }
+
+        /**
+         * Verschiebt einen Punkt entlang der Verbindungsachse zum Zentrum nach innen um den Glättungsradius.
+         *
+         * @param {[number,number]} point Ursprünglicher Eckpunkt [x, y].
+         * @returns {[number,number]} Neuer Punkt im Inneren für diagonale Linien.
+         */
+        function movePointInward(point) {
+          const vectorToCorner = subtractVectors(point, centerPoint);
+
+          const smoothingCircleCenter = addVectors(
+            centerPoint,
+            multiplyVectors(vectorToCorner, 1 - cornerRoundness)
+          );
+
+          return addVectors(
+            smoothingCircleCenter,
+            multiplyVectors(
+              normalizeVector(vectorToCorner),
+              smoothingCircleRadius
+            )
+          );
+        }
+
+        const hexSideOffset =
+          (calculateDistance(hexagonCornerPoints[0], hexagonCornerPoints[1]) *
+            cornerRoundness) /
+          2;
+        const trimmedHexSideLength =
+          calculateDistance(hexagonCornerPoints[0], hexagonCornerPoints[1]) -
+          2 * hexSideOffset;
+
+        /**
+         * Gesamtlänge des Pfads (Perimeter) berechnen:
+         * 6 Seitenabschnitte + 6 Kreisbögen
+         */
+        const hexagonPerimeter =
+          trimmedHexSideLength * 6 +
+          2 * Math.PI * smoothingCircleRadius +
+          hexStrokeWidth;
+
+        // Build SVG element
+        /**
+         * Erstellung des SVG-Elements mit Namespace und Basisattributen.
+         * width/height definieren die Zeichenfläche, viewBox sorgt für Koordinatensystem,
+         * class und style ermöglichen Positionierung und Transparenz.
+         */
+        const svgElement = document.createElementNS(
+          "http://www.w3.org/2000/svg",
+          "svg"
+        );
+        //svgElement.setAttribute("xmlns", "http://www.w3.org/2000/svg");
+        //svgElement.setAttribute("xmlns:xlink", "http://www.w3.org/1999/xlink");
+        svgElement.setAttribute("width", `${svgWidth}`);
+        svgElement.setAttribute("height", `${svgHeight}`);
+        svgElement.setAttribute("viewBox", `0 0 ${svgWidth} ${svgHeight}`);
+
+        /**
+         * Gruppe für alle Strichelemente: Pfade, Linien und Marker.
+         * Hier werden Standard-Stile wie stroke, stroke-width und Linienenden definiert.
+         */
+        const groupElement = document.createElementNS(
+          "http://www.w3.org/2000/svg",
+          "g"
+        );
+        groupElement.setAttribute("fill", "none");
+        groupElement.setAttribute(
+          "stroke",
+          colored ? "#bc0926" : "currentColor"
+        );
+        groupElement.setAttribute("stroke-width", `${hexStrokeWidth}`);
+        groupElement.setAttribute("stroke-linecap", "round");
+        groupElement.setAttribute("stroke-linejoin", "round");
+
+        /**
+         * Pfad für das abgerundete Sechseck erstellen und Parametern für die Animationslänge
+         * zuweisen (stroke-dasharray und stroke-dashoffset). Falls animationDurationSeconds > 0,
+         * wird ein <animate>-Element hinzugefügt, das den Strich zeichnet.
+         */
+        const hexagonPath = document.createElementNS(
+          "http://www.w3.org/2000/svg",
+          "path"
+        );
+        hexagonPath.setAttribute(
+          "d",
+          createRoundedPath(hexagonCornerPoints, cornerRadius)
+        );
+
+        if (animationDurationSeconds > 0) {
+          hexagonPath.setAttribute(
+            "stroke-dasharray",
+            `${hexagonPerimeter.toFixed(3)}`
+          );
+
+          const hexagonAnimation = document.createElementNS(
+            "http://www.w3.org/2000/svg",
+            "animate"
+          );
+          hexagonAnimation.setAttribute("attributeName", "stroke-dashoffset");
+
+          switch (animationDirection) {
+            case "show":
+              hexagonAnimation.setAttribute("fill", "freeze");
+              hexagonAnimation.setAttribute(
+                "dur",
+                `${animationDurationSeconds.toFixed(3)}s`
+              );
+
+              hexagonPath.setAttribute(
+                "stroke-dashoffset",
+                `${hexagonPerimeter.toFixed(3)}`
+              );
+
+              hexagonAnimation.setAttribute(
+                "values",
+                `${hexagonPerimeter.toFixed(3)};0`
+              );
+              break;
+            case "hide":
+              hexagonAnimation.setAttribute("fill", "freeze");
+              hexagonAnimation.setAttribute(
+                "dur",
+                `${animationDurationSeconds.toFixed(3)}s`
+              );
+
+              hexagonPath.setAttribute(
+                "stroke-dashoffset",
+                `${(2 * hexagonPerimeter).toFixed(3)}`
+              );
+
+              hexagonAnimation.setAttribute(
+                "values",
+                `${(2 * hexagonPerimeter).toFixed(
+                  3
+                )};${hexagonPerimeter.toFixed(3)}`
+              );
+              break;
+            case "loop":
+              hexagonAnimation.setAttribute("repeatCount", "indefinite");
+              hexagonAnimation.setAttribute(
+                "dur",
+                `${(2 * animationDurationSeconds).toFixed(3)}s`
+              );
+
+              hexagonPath.setAttribute(
+                "stroke-dashoffset",
+                `${hexagonPerimeter.toFixed(3)}`
+              );
+
+              hexagonAnimation.setAttribute(
+                "values",
+                `${hexagonPerimeter.toFixed(3)};${(-hexagonPerimeter).toFixed(
+                  3
+                )}`
+              );
+              break;
+          }
+
+          // Append the hexagon animate element to the hexagon path
+          hexagonPath.appendChild(hexagonAnimation);
+        }
+
+        /** @type {[number, number][]} */
+        const inwardDiagonalPoints = [
+          movePointInward(hexagonCornerPoints[0]),
+          movePointInward(hexagonCornerPoints[3]),
+        ];
+
+        /**
+         * Diagonale Linie zwischen zwei gegenüberliegenden inneren Eckpunkten.
+         * Die Animation wird halb so lang sein wie die des Sechsecks.
+         */
+        const diagonalSVGLine = document.createElementNS(
+          "http://www.w3.org/2000/svg",
+          "line"
+        );
+        diagonalSVGLine.setAttribute(
+          "x1",
+          `${inwardDiagonalPoints[0][0].toFixed(3)}`
+        );
+        diagonalSVGLine.setAttribute(
+          "y1",
+          `${inwardDiagonalPoints[0][1].toFixed(3)}`
+        );
+        diagonalSVGLine.setAttribute(
+          "x2",
+          `${inwardDiagonalPoints[1][0].toFixed(3)}`
+        );
+        diagonalSVGLine.setAttribute(
+          "y2",
+          `${inwardDiagonalPoints[1][1].toFixed(3)}`
+        );
+
+        if (animationDurationSeconds > 0) {
+          const diagonalDistance =
+            calculateDistance(
+              inwardDiagonalPoints[0],
+              inwardDiagonalPoints[1]
+            ) + hexStrokeWidth;
+
+          diagonalSVGLine.setAttribute(
+            "stroke-dasharray",
+            `${diagonalDistance.toFixed(3)}`
+          );
+
+          const diagonalAnimation = document.createElementNS(
+            "http://www.w3.org/2000/svg",
+            "animate"
+          );
+          diagonalAnimation.setAttribute("attributeName", "stroke-dashoffset");
+
+          switch (animationDirection) {
+            case "show":
+              diagonalAnimation.setAttribute("fill", "freeze");
+              diagonalAnimation.setAttribute(
+                "dur",
+                `${(animationDurationSeconds / 2).toFixed(3)}s`
+              );
+
+              diagonalSVGLine.setAttribute(
+                "stroke-dashoffset",
+                `${diagonalDistance.toFixed(3)}`
+              );
+
+              diagonalAnimation.setAttribute(
+                "values",
+                `${diagonalDistance.toFixed(3)};0`
+              );
+              break;
+            case "hide":
+              diagonalAnimation.setAttribute("fill", "freeze");
+              diagonalAnimation.setAttribute(
+                "dur",
+                `${(animationDurationSeconds / 2).toFixed(3)}s`
+              );
+
+              diagonalSVGLine.setAttribute(
+                "stroke-dashoffset",
+                `${(2 * diagonalDistance).toFixed(3)}`
+              );
+
+              diagonalAnimation.setAttribute(
+                "values",
+                `${(2 * diagonalDistance).toFixed(
+                  3
+                )};${diagonalDistance.toFixed(3)}`
+              );
+              break;
+            case "loop":
+              diagonalAnimation.setAttribute("repeatCount", "indefinite");
+              diagonalAnimation.setAttribute(
+                "dur",
+                `${(2 * animationDurationSeconds).toFixed(3)}s`
+              );
+
+              diagonalSVGLine.setAttribute(
+                "stroke-dashoffset",
+                `${diagonalDistance.toFixed(3)}`
+              );
+
+              diagonalAnimation.setAttribute(
+                "values",
+                `${diagonalDistance.toFixed(
+                  3
+                )};0;0;${(-diagonalDistance).toFixed(
+                  3
+                )};${(-diagonalDistance).toFixed(3)}`
+              );
+
+              break;
+          }
+
+          diagonalSVGLine.appendChild(diagonalAnimation);
+        }
+
+        /** @type {[number, number][]} */
+        const letterKTopPoints = [
+          movePointInward(hexagonCornerPoints[1]),
+          centerPoint,
+        ];
+
+        const letterKTopLine = document.createElementNS(
+          "http://www.w3.org/2000/svg",
+          "line"
+        );
+        letterKTopLine.setAttribute(
+          "x1",
+          `${letterKTopPoints[0][0].toFixed(3)}`
+        );
+        letterKTopLine.setAttribute(
+          "y1",
+          `${letterKTopPoints[0][1].toFixed(3)}`
+        );
+        letterKTopLine.setAttribute(
+          "x2",
+          `${letterKTopPoints[1][0].toFixed(3)}`
+        );
+        letterKTopLine.setAttribute(
+          "y2",
+          `${letterKTopPoints[1][1].toFixed(3)}`
+        );
+
+        if (animationDurationSeconds > 0) {
+          const letterKTopDistance =
+            calculateDistance(letterKTopPoints[0], letterKTopPoints[1]) +
+            hexStrokeWidth;
+
+          letterKTopLine.setAttribute(
+            "stroke-dasharray",
+            `${letterKTopDistance.toFixed(3)}`
+          );
+
+          const letterKTopAnimation = document.createElementNS(
+            "http://www.w3.org/2000/svg",
+            "animate"
+          );
+          letterKTopAnimation.setAttribute(
+            "attributeName",
+            "stroke-dashoffset"
+          );
+
+          switch (animationDirection) {
+            case "show":
+              letterKTopAnimation.setAttribute("fill", "freeze");
+              letterKTopAnimation.setAttribute(
+                "dur",
+                `${(animationDurationSeconds / 4).toFixed(3)}s`
+              );
+              letterKTopAnimation.setAttribute(
+                "begin",
+                `${(animationDurationSeconds / 6).toFixed(3)}s`
+              );
+
+              letterKTopLine.setAttribute(
+                "stroke-dashoffset",
+                `${letterKTopDistance.toFixed(3)}`
+              );
+
+              letterKTopAnimation.setAttribute(
+                "values",
+                `${letterKTopDistance.toFixed(3)};0`
+              );
+              break;
+            case "hide":
+              letterKTopAnimation.setAttribute("fill", "freeze");
+              letterKTopAnimation.setAttribute(
+                "dur",
+                `${(animationDurationSeconds / 4).toFixed(3)}s`
+              );
+              letterKTopAnimation.setAttribute(
+                "begin",
+                `${(animationDurationSeconds / 6).toFixed(3)}s`
+              );
+
+              letterKTopLine.setAttribute(
+                "stroke-dashoffset",
+                `${(2 * letterKTopDistance).toFixed(3)}`
+              );
+
+              letterKTopAnimation.setAttribute(
+                "values",
+                `${(2 * letterKTopDistance).toFixed(
+                  3
+                )};${letterKTopDistance.toFixed(3)}`
+              );
+              break;
+            case "loop":
+              letterKTopAnimation.setAttribute("repeatCount", "indefinite");
+              letterKTopAnimation.setAttribute(
+                "dur",
+                `${(2 * animationDurationSeconds).toFixed(3)}s`
+              );
+              letterKTopAnimation.setAttribute(
+                "keyTimes",
+                `0;${(1 / 12).toFixed(3)};${(1 / 12 + 1 / 8).toFixed(3)};${(
+                  0.5 +
+                  1 / 12
+                ).toFixed(3)};${(0.5 + 1 / 12 + 1 / 8).toFixed(3)};1`
+              );
+
+              letterKTopLine.setAttribute(
+                "stroke-dashoffset",
+                `${letterKTopDistance.toFixed(3)}`
+              );
+
+              letterKTopAnimation.setAttribute(
+                "values",
+                `${letterKTopDistance.toFixed(3)};${letterKTopDistance.toFixed(
+                  3
+                )};0;0;${(-letterKTopDistance).toFixed(
+                  3
+                )};${(-letterKTopDistance).toFixed(3)}`
+              );
+              break;
+          }
+
+          letterKTopLine.appendChild(letterKTopAnimation);
+        }
+
+        /** @type {[number, number][]} */
+        const letterKBottomPoints = [
+          addVectors(
+            hexagonCornerPoints[2],
+            multiplyVectors(
+              subtractVectors(hexagonCornerPoints[3], hexagonCornerPoints[2]),
+              0.2
+            )
+          ),
+          addVectors(
+            centerPoint,
+            multiplyVectors(
+              subtractVectors(hexagonCornerPoints[1], centerPoint),
+              0.22
+            )
+          ),
+        ];
+
+        const letterKBottomLine = document.createElementNS(
+          "http://www.w3.org/2000/svg",
+          "line"
+        );
+        letterKBottomLine.setAttribute(
+          "x1",
+          `${letterKBottomPoints[0][0].toFixed(3)}`
+        );
+        letterKBottomLine.setAttribute(
+          "y1",
+          `${letterKBottomPoints[0][1].toFixed(3)}`
+        );
+        letterKBottomLine.setAttribute(
+          "x2",
+          `${letterKBottomPoints[1][0].toFixed(3)}`
+        );
+        letterKBottomLine.setAttribute(
+          "y2",
+          `${letterKBottomPoints[1][1].toFixed(3)}`
+        );
+
+        if (animationDurationSeconds > 0) {
+          const letterKBottomDistance =
+            calculateDistance(letterKBottomPoints[0], letterKBottomPoints[1]) +
+            hexStrokeWidth;
+
+          letterKBottomLine.setAttribute(
+            "stroke-dasharray",
+            `${letterKBottomDistance.toFixed(3)}`
+          );
+
+          const letterKBottomAnimation = document.createElementNS(
+            "http://www.w3.org/2000/svg",
+            "animate"
+          );
+          letterKBottomAnimation.setAttribute(
+            "attributeName",
+            "stroke-dashoffset"
+          );
+
+          switch (animationDirection) {
+            case "show":
+              letterKBottomAnimation.setAttribute("fill", "freeze");
+              letterKBottomAnimation.setAttribute(
+                "dur",
+                `${(animationDurationSeconds / 4).toFixed(3)}s`
+              );
+              letterKBottomAnimation.setAttribute(
+                "begin",
+                `${((2.2 * animationDurationSeconds) / 6).toFixed(3)}s`
+              );
+
+              letterKBottomLine.setAttribute(
+                "stroke-dashoffset",
+                `${letterKBottomDistance.toFixed(3)}`
+              );
+
+              letterKBottomAnimation.setAttribute(
+                "values",
+                `${letterKBottomDistance.toFixed(3)};0`
+              );
+              break;
+            case "hide":
+              letterKBottomAnimation.setAttribute("fill", "freeze");
+              letterKBottomAnimation.setAttribute(
+                "dur",
+                `${(animationDurationSeconds / 4).toFixed(3)}s`
+              );
+              letterKBottomAnimation.setAttribute(
+                "begin",
+                `${((2.2 * animationDurationSeconds) / 6).toFixed(3)}s`
+              );
+
+              letterKBottomLine.setAttribute(
+                "stroke-dashoffset",
+                `${(2 * letterKBottomDistance).toFixed(3)}`
+              );
+
+              letterKBottomAnimation.setAttribute(
+                "values",
+                `${(2 * letterKBottomDistance).toFixed(
+                  3
+                )};${letterKBottomDistance.toFixed(3)}`
+              );
+              break;
+            case "loop":
+              letterKBottomAnimation.setAttribute("repeatCount", "indefinite");
+              letterKBottomAnimation.setAttribute(
+                "dur",
+                `${(2 * animationDurationSeconds).toFixed(3)}s`
+              );
+              letterKBottomAnimation.setAttribute(
+                "keyTimes",
+                `0;${(2.2 / 12).toFixed(3)};${(2.2 / 12 + 1 / 8).toFixed(3)};${(
+                  0.5 +
+                  2.2 / 12
+                ).toFixed(3)};${(0.5 + 2.2 / 12 + 1 / 8).toFixed(3)};1`
+              );
+
+              letterKBottomLine.setAttribute(
+                "stroke-dashoffset",
+                `${letterKBottomDistance.toFixed(3)}`
+              );
+
+              letterKBottomAnimation.setAttribute(
+                "values",
+                `${letterKBottomDistance.toFixed(
+                  3
+                )};${letterKBottomDistance.toFixed(
+                  3
+                )};0;0;${(-letterKBottomDistance).toFixed(
+                  3
+                )};${(-letterKBottomDistance).toFixed(3)}`
+              );
+              break;
+          }
+
+          letterKBottomLine.appendChild(letterKBottomAnimation);
+        }
+
+        groupElement.appendChild(hexagonPath);
+        groupElement.appendChild(diagonalSVGLine);
+        groupElement.appendChild(letterKTopLine);
+        groupElement.appendChild(letterKBottomLine);
+
+        /**
+         * Alle erstellten SVG-Elemente werden der Gruppe hinzugefügt und
+         * anschließend in das Dokument eingebunden.
+         */
+        svgElement.appendChild(groupElement);
+
+        return svgElement;
+      }
+
+      for (const [duration, direction] of [
+        [0, "static"],
+        [0.75, "show"],
+        [0.75, "hide"],
+        [1.25, "loop"],
+      ]) {
+        for (const size of [32, 24, 16, 12, 10, 8]) {
+          for (const colored of [true, false]) {
+            const konnexLogo = createKonnexSVG(
+              size,
+              1,
+              0.96,
+              0.1,
+              colored,
+              duration,
+              direction
+            );
+
+            const serializer = new XMLSerializer();
+            const svgString = serializer.serializeToString(konnexLogo);
+            const url = `data:image/svg;charset=utf-8,${encodeURIComponent(
+              svgString
+            )}`;
+
+            const link = document.createElement("a");
+            link.download = `konnex-logo${size === 32 ? "" : "-" + size}${
+              colored ? "" : "-uncolored"
+            }${duration > 0 ? "-" + direction : ""}.svg`;
+            link.href = url;
+
+            link.appendChild(konnexLogo);
+            document.body.appendChild(link);
+
+            //link.click();
+          }
+        }
+      }
+    </script>
+  </body>
+</html>
