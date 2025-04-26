@@ -7,6 +7,7 @@ import { Plugin, defineConfig } from "vite";
 import viteCompression from "vite-plugin-compression";
 import lqip from "vite-plugin-lqip";
 import solidPlugin from "vite-plugin-solid";
+import { viteStaticCopy } from "vite-plugin-static-copy";
 import webfontDownload from "vite-plugin-webfont-dl";
 
 const root = resolve(__dirname, "src");
@@ -22,6 +23,14 @@ export default defineConfig({
     lqip(),
     (Icons as (options: Options) => Plugin)({
       compiler: "solid",
+    }),
+    viteStaticCopy({
+      targets: [
+        {
+          src: resolve(root, "favicon.ico"),
+          dest: "",
+        },
+      ],
     }),
     LightningCSS(),
     viteCompression({
