@@ -1,8 +1,11 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0"
+    />
     <title>Logo</title>
     <style>
       svg {
@@ -21,7 +24,7 @@
         cornerRoundness,
         colored,
         animationDurationSeconds,
-        animationDirection
+        animationDirection,
       ) {
         const svgWidth = svgSize;
         const svgHeight = svgSize;
@@ -182,22 +185,22 @@
             hexagonCornerPoints[1],
             multiplyVectors(
               subtractVectors(hexagonCornerPoints[0], hexagonCornerPoints[1]),
-              cornerRoundness / 2
-            )
+              cornerRoundness / 2,
+            ),
           );
           const afterCornerPoint = addVectors(
             hexagonCornerPoints[1],
             multiplyVectors(
               subtractVectors(hexagonCornerPoints[2], hexagonCornerPoints[1]),
-              cornerRoundness / 2
-            )
+              cornerRoundness / 2,
+            ),
           );
           // Directions of edges
           const incomingDir = normalizeVector(
-            subtractVectors(hexagonCornerPoints[1], hexagonCornerPoints[0])
+            subtractVectors(hexagonCornerPoints[1], hexagonCornerPoints[0]),
           );
           const outgoingDir = normalizeVector(
-            subtractVectors(hexagonCornerPoints[2], hexagonCornerPoints[1])
+            subtractVectors(hexagonCornerPoints[2], hexagonCornerPoints[1]),
           );
           // Normals to edges
           const normalIn = [incomingDir[1], -incomingDir[0]];
@@ -205,17 +208,17 @@
           // Solve for circle center of smoothing arc
           const diffVectors = subtractVectors(
             afterCornerPoint,
-            beforeCornerPoint
+            beforeCornerPoint,
           );
           const crossNormals = crossProduct(normalIn, normalOut);
           const t = crossProduct(diffVectors, normalOut) / crossNormals;
           const smoothingCenter = addVectors(
             beforeCornerPoint,
-            multiplyVectors(normalIn, t)
+            multiplyVectors(normalIn, t),
           );
           smoothingCircleRadius = calculateDistance(
             beforeCornerPoint,
-            smoothingCenter
+            smoothingCenter,
           );
         }
 
@@ -253,11 +256,11 @@
           const next0 = cornerPts[1];
           const before0 = addVectors(
             c0,
-            multiplyVectors(subtractVectors(prev0, c0), cornerRoundness / 2)
+            multiplyVectors(subtractVectors(prev0, c0), cornerRoundness / 2),
           );
           const after0 = addVectors(
             c0,
-            multiplyVectors(subtractVectors(next0, c0), cornerRoundness / 2)
+            multiplyVectors(subtractVectors(next0, c0), cornerRoundness / 2),
           );
           const inDir0 = normalizeVector(subtractVectors(c0, prev0));
           const outDir0 = normalizeVector(subtractVectors(next0, c0));
@@ -283,20 +286,20 @@
           let pathD = `M ${midPt[0].toFixed(3)} ${midPt[1].toFixed(3)} `;
           // first half-arc of corner 0
           pathD += `A ${arcRadius.toFixed(3)} ${arcRadius.toFixed(
-            3
+            3,
           )} 0 0 1 ${b0[0].toFixed(3)} ${b0[1].toFixed(3)} `;
           // draw full edges and arcs for corners 1..last
           for (let i = 1; i < pointCount; i++) {
             const { start, end } = tangentPoints[i];
             pathD += `L ${start[0].toFixed(3)} ${start[1].toFixed(3)} `;
             pathD += `A ${arcRadius.toFixed(3)} ${arcRadius.toFixed(
-              3
+              3,
             )} 0 0 1 ${end[0].toFixed(3)} ${end[1].toFixed(3)} `;
           }
           // close with straight to start of corner 0 and second half-arc back to midpoint
           pathD += `L ${a0[0].toFixed(3)} ${a0[1].toFixed(3)} `;
           pathD += `A ${arcRadius.toFixed(3)} ${arcRadius.toFixed(
-            3
+            3,
           )} 0 0 1 ${midPt[0].toFixed(3)} ${midPt[1].toFixed(3)} Z`;
           return pathD;
         }
@@ -312,15 +315,15 @@
 
           const smoothingCircleCenter = addVectors(
             centerPoint,
-            multiplyVectors(vectorToCorner, 1 - cornerRoundness)
+            multiplyVectors(vectorToCorner, 1 - cornerRoundness),
           );
 
           return addVectors(
             smoothingCircleCenter,
             multiplyVectors(
               normalizeVector(vectorToCorner),
-              smoothingCircleRadius
-            )
+              smoothingCircleRadius,
+            ),
           );
         }
 
@@ -349,7 +352,7 @@
          */
         const svgElement = document.createElementNS(
           "http://www.w3.org/2000/svg",
-          "svg"
+          "svg",
         );
         //svgElement.setAttribute("xmlns", "http://www.w3.org/2000/svg");
         //svgElement.setAttribute("xmlns:xlink", "http://www.w3.org/1999/xlink");
@@ -363,12 +366,12 @@
          */
         const groupElement = document.createElementNS(
           "http://www.w3.org/2000/svg",
-          "g"
+          "g",
         );
         groupElement.setAttribute("fill", "none");
         groupElement.setAttribute(
           "stroke",
-          colored ? "#bc0926" : "currentColor"
+          colored ? "#bc0926" : "currentColor",
         );
         groupElement.setAttribute("stroke-width", `${hexStrokeWidth}`);
         groupElement.setAttribute("stroke-linecap", "round");
@@ -381,22 +384,22 @@
          */
         const hexagonPath = document.createElementNS(
           "http://www.w3.org/2000/svg",
-          "path"
+          "path",
         );
         hexagonPath.setAttribute(
           "d",
-          createRoundedPath(hexagonCornerPoints, cornerRadius)
+          createRoundedPath(hexagonCornerPoints, cornerRadius),
         );
 
         if (animationDurationSeconds > 0) {
           hexagonPath.setAttribute(
             "stroke-dasharray",
-            `${hexagonPerimeter.toFixed(3)}`
+            `${hexagonPerimeter.toFixed(3)}`,
           );
 
           const hexagonAnimation = document.createElementNS(
             "http://www.w3.org/2000/svg",
-            "animate"
+            "animate",
           );
           hexagonAnimation.setAttribute("attributeName", "stroke-dashoffset");
 
@@ -405,55 +408,55 @@
               hexagonAnimation.setAttribute("fill", "freeze");
               hexagonAnimation.setAttribute(
                 "dur",
-                `${animationDurationSeconds.toFixed(3)}s`
+                `${animationDurationSeconds.toFixed(3)}s`,
               );
 
               hexagonPath.setAttribute(
                 "stroke-dashoffset",
-                `${hexagonPerimeter.toFixed(3)}`
+                `${hexagonPerimeter.toFixed(3)}`,
               );
 
               hexagonAnimation.setAttribute(
                 "values",
-                `${hexagonPerimeter.toFixed(3)};0`
+                `${hexagonPerimeter.toFixed(3)};0`,
               );
               break;
             case "hide":
               hexagonAnimation.setAttribute("fill", "freeze");
               hexagonAnimation.setAttribute(
                 "dur",
-                `${animationDurationSeconds.toFixed(3)}s`
+                `${animationDurationSeconds.toFixed(3)}s`,
               );
 
               hexagonPath.setAttribute(
                 "stroke-dashoffset",
-                `${(2 * hexagonPerimeter).toFixed(3)}`
+                `${(2 * hexagonPerimeter).toFixed(3)}`,
               );
 
               hexagonAnimation.setAttribute(
                 "values",
                 `${(2 * hexagonPerimeter).toFixed(
-                  3
-                )};${hexagonPerimeter.toFixed(3)}`
+                  3,
+                )};${hexagonPerimeter.toFixed(3)}`,
               );
               break;
             case "loop":
               hexagonAnimation.setAttribute("repeatCount", "indefinite");
               hexagonAnimation.setAttribute(
                 "dur",
-                `${(2 * animationDurationSeconds).toFixed(3)}s`
+                `${(2 * animationDurationSeconds).toFixed(3)}s`,
               );
 
               hexagonPath.setAttribute(
                 "stroke-dashoffset",
-                `${hexagonPerimeter.toFixed(3)}`
+                `${hexagonPerimeter.toFixed(3)}`,
               );
 
               hexagonAnimation.setAttribute(
                 "values",
                 `${hexagonPerimeter.toFixed(3)};${(-hexagonPerimeter).toFixed(
-                  3
-                )}`
+                  3,
+                )}`,
               );
               break;
           }
@@ -474,40 +477,40 @@
          */
         const diagonalSVGLine = document.createElementNS(
           "http://www.w3.org/2000/svg",
-          "line"
+          "line",
         );
         diagonalSVGLine.setAttribute(
           "x1",
-          `${inwardDiagonalPoints[0][0].toFixed(3)}`
+          `${inwardDiagonalPoints[0][0].toFixed(3)}`,
         );
         diagonalSVGLine.setAttribute(
           "y1",
-          `${inwardDiagonalPoints[0][1].toFixed(3)}`
+          `${inwardDiagonalPoints[0][1].toFixed(3)}`,
         );
         diagonalSVGLine.setAttribute(
           "x2",
-          `${inwardDiagonalPoints[1][0].toFixed(3)}`
+          `${inwardDiagonalPoints[1][0].toFixed(3)}`,
         );
         diagonalSVGLine.setAttribute(
           "y2",
-          `${inwardDiagonalPoints[1][1].toFixed(3)}`
+          `${inwardDiagonalPoints[1][1].toFixed(3)}`,
         );
 
         if (animationDurationSeconds > 0) {
           const diagonalDistance =
             calculateDistance(
               inwardDiagonalPoints[0],
-              inwardDiagonalPoints[1]
+              inwardDiagonalPoints[1],
             ) + hexStrokeWidth;
 
           diagonalSVGLine.setAttribute(
             "stroke-dasharray",
-            `${diagonalDistance.toFixed(3)}`
+            `${diagonalDistance.toFixed(3)}`,
           );
 
           const diagonalAnimation = document.createElementNS(
             "http://www.w3.org/2000/svg",
-            "animate"
+            "animate",
           );
           diagonalAnimation.setAttribute("attributeName", "stroke-dashoffset");
 
@@ -516,57 +519,57 @@
               diagonalAnimation.setAttribute("fill", "freeze");
               diagonalAnimation.setAttribute(
                 "dur",
-                `${(animationDurationSeconds / 2).toFixed(3)}s`
+                `${(animationDurationSeconds / 2).toFixed(3)}s`,
               );
 
               diagonalSVGLine.setAttribute(
                 "stroke-dashoffset",
-                `${diagonalDistance.toFixed(3)}`
+                `${diagonalDistance.toFixed(3)}`,
               );
 
               diagonalAnimation.setAttribute(
                 "values",
-                `${diagonalDistance.toFixed(3)};0`
+                `${diagonalDistance.toFixed(3)};0`,
               );
               break;
             case "hide":
               diagonalAnimation.setAttribute("fill", "freeze");
               diagonalAnimation.setAttribute(
                 "dur",
-                `${(animationDurationSeconds / 2).toFixed(3)}s`
+                `${(animationDurationSeconds / 2).toFixed(3)}s`,
               );
 
               diagonalSVGLine.setAttribute(
                 "stroke-dashoffset",
-                `${(2 * diagonalDistance).toFixed(3)}`
+                `${(2 * diagonalDistance).toFixed(3)}`,
               );
 
               diagonalAnimation.setAttribute(
                 "values",
                 `${(2 * diagonalDistance).toFixed(
-                  3
-                )};${diagonalDistance.toFixed(3)}`
+                  3,
+                )};${diagonalDistance.toFixed(3)}`,
               );
               break;
             case "loop":
               diagonalAnimation.setAttribute("repeatCount", "indefinite");
               diagonalAnimation.setAttribute(
                 "dur",
-                `${(2 * animationDurationSeconds).toFixed(3)}s`
+                `${(2 * animationDurationSeconds).toFixed(3)}s`,
               );
 
               diagonalSVGLine.setAttribute(
                 "stroke-dashoffset",
-                `${diagonalDistance.toFixed(3)}`
+                `${diagonalDistance.toFixed(3)}`,
               );
 
               diagonalAnimation.setAttribute(
                 "values",
                 `${diagonalDistance.toFixed(
-                  3
+                  3,
                 )};0;0;${(-diagonalDistance).toFixed(
-                  3
-                )};${(-diagonalDistance).toFixed(3)}`
+                  3,
+                )};${(-diagonalDistance).toFixed(3)}`,
               );
 
               break;
@@ -583,23 +586,23 @@
 
         const letterKTopLine = document.createElementNS(
           "http://www.w3.org/2000/svg",
-          "line"
+          "line",
         );
         letterKTopLine.setAttribute(
           "x1",
-          `${letterKTopPoints[0][0].toFixed(3)}`
+          `${letterKTopPoints[0][0].toFixed(3)}`,
         );
         letterKTopLine.setAttribute(
           "y1",
-          `${letterKTopPoints[0][1].toFixed(3)}`
+          `${letterKTopPoints[0][1].toFixed(3)}`,
         );
         letterKTopLine.setAttribute(
           "x2",
-          `${letterKTopPoints[1][0].toFixed(3)}`
+          `${letterKTopPoints[1][0].toFixed(3)}`,
         );
         letterKTopLine.setAttribute(
           "y2",
-          `${letterKTopPoints[1][1].toFixed(3)}`
+          `${letterKTopPoints[1][1].toFixed(3)}`,
         );
 
         if (animationDurationSeconds > 0) {
@@ -609,16 +612,16 @@
 
           letterKTopLine.setAttribute(
             "stroke-dasharray",
-            `${letterKTopDistance.toFixed(3)}`
+            `${letterKTopDistance.toFixed(3)}`,
           );
 
           const letterKTopAnimation = document.createElementNS(
             "http://www.w3.org/2000/svg",
-            "animate"
+            "animate",
           );
           letterKTopAnimation.setAttribute(
             "attributeName",
-            "stroke-dashoffset"
+            "stroke-dashoffset",
           );
 
           switch (animationDirection) {
@@ -626,72 +629,72 @@
               letterKTopAnimation.setAttribute("fill", "freeze");
               letterKTopAnimation.setAttribute(
                 "dur",
-                `${(animationDurationSeconds / 4).toFixed(3)}s`
+                `${(animationDurationSeconds / 4).toFixed(3)}s`,
               );
               letterKTopAnimation.setAttribute(
                 "begin",
-                `${(animationDurationSeconds / 6).toFixed(3)}s`
+                `${(animationDurationSeconds / 6).toFixed(3)}s`,
               );
 
               letterKTopLine.setAttribute(
                 "stroke-dashoffset",
-                `${letterKTopDistance.toFixed(3)}`
+                `${letterKTopDistance.toFixed(3)}`,
               );
 
               letterKTopAnimation.setAttribute(
                 "values",
-                `${letterKTopDistance.toFixed(3)};0`
+                `${letterKTopDistance.toFixed(3)};0`,
               );
               break;
             case "hide":
               letterKTopAnimation.setAttribute("fill", "freeze");
               letterKTopAnimation.setAttribute(
                 "dur",
-                `${(animationDurationSeconds / 4).toFixed(3)}s`
+                `${(animationDurationSeconds / 4).toFixed(3)}s`,
               );
               letterKTopAnimation.setAttribute(
                 "begin",
-                `${(animationDurationSeconds / 6).toFixed(3)}s`
+                `${(animationDurationSeconds / 6).toFixed(3)}s`,
               );
 
               letterKTopLine.setAttribute(
                 "stroke-dashoffset",
-                `${(2 * letterKTopDistance).toFixed(3)}`
+                `${(2 * letterKTopDistance).toFixed(3)}`,
               );
 
               letterKTopAnimation.setAttribute(
                 "values",
                 `${(2 * letterKTopDistance).toFixed(
-                  3
-                )};${letterKTopDistance.toFixed(3)}`
+                  3,
+                )};${letterKTopDistance.toFixed(3)}`,
               );
               break;
             case "loop":
               letterKTopAnimation.setAttribute("repeatCount", "indefinite");
               letterKTopAnimation.setAttribute(
                 "dur",
-                `${(2 * animationDurationSeconds).toFixed(3)}s`
+                `${(2 * animationDurationSeconds).toFixed(3)}s`,
               );
               letterKTopAnimation.setAttribute(
                 "keyTimes",
                 `0;${(1 / 12).toFixed(3)};${(1 / 12 + 1 / 8).toFixed(3)};${(
                   0.5 +
                   1 / 12
-                ).toFixed(3)};${(0.5 + 1 / 12 + 1 / 8).toFixed(3)};1`
+                ).toFixed(3)};${(0.5 + 1 / 12 + 1 / 8).toFixed(3)};1`,
               );
 
               letterKTopLine.setAttribute(
                 "stroke-dashoffset",
-                `${letterKTopDistance.toFixed(3)}`
+                `${letterKTopDistance.toFixed(3)}`,
               );
 
               letterKTopAnimation.setAttribute(
                 "values",
                 `${letterKTopDistance.toFixed(3)};${letterKTopDistance.toFixed(
-                  3
+                  3,
                 )};0;0;${(-letterKTopDistance).toFixed(
-                  3
-                )};${(-letterKTopDistance).toFixed(3)}`
+                  3,
+                )};${(-letterKTopDistance).toFixed(3)}`,
               );
               break;
           }
@@ -705,37 +708,37 @@
             hexagonCornerPoints[2],
             multiplyVectors(
               subtractVectors(hexagonCornerPoints[3], hexagonCornerPoints[2]),
-              0.2
-            )
+              0.2,
+            ),
           ),
           addVectors(
             centerPoint,
             multiplyVectors(
               subtractVectors(hexagonCornerPoints[1], centerPoint),
-              0.22
-            )
+              0.22,
+            ),
           ),
         ];
 
         const letterKBottomLine = document.createElementNS(
           "http://www.w3.org/2000/svg",
-          "line"
+          "line",
         );
         letterKBottomLine.setAttribute(
           "x1",
-          `${letterKBottomPoints[0][0].toFixed(3)}`
+          `${letterKBottomPoints[0][0].toFixed(3)}`,
         );
         letterKBottomLine.setAttribute(
           "y1",
-          `${letterKBottomPoints[0][1].toFixed(3)}`
+          `${letterKBottomPoints[0][1].toFixed(3)}`,
         );
         letterKBottomLine.setAttribute(
           "x2",
-          `${letterKBottomPoints[1][0].toFixed(3)}`
+          `${letterKBottomPoints[1][0].toFixed(3)}`,
         );
         letterKBottomLine.setAttribute(
           "y2",
-          `${letterKBottomPoints[1][1].toFixed(3)}`
+          `${letterKBottomPoints[1][1].toFixed(3)}`,
         );
 
         if (animationDurationSeconds > 0) {
@@ -745,16 +748,16 @@
 
           letterKBottomLine.setAttribute(
             "stroke-dasharray",
-            `${letterKBottomDistance.toFixed(3)}`
+            `${letterKBottomDistance.toFixed(3)}`,
           );
 
           const letterKBottomAnimation = document.createElementNS(
             "http://www.w3.org/2000/svg",
-            "animate"
+            "animate",
           );
           letterKBottomAnimation.setAttribute(
             "attributeName",
-            "stroke-dashoffset"
+            "stroke-dashoffset",
           );
 
           switch (animationDirection) {
@@ -762,74 +765,74 @@
               letterKBottomAnimation.setAttribute("fill", "freeze");
               letterKBottomAnimation.setAttribute(
                 "dur",
-                `${(animationDurationSeconds / 4).toFixed(3)}s`
+                `${(animationDurationSeconds / 4).toFixed(3)}s`,
               );
               letterKBottomAnimation.setAttribute(
                 "begin",
-                `${((2.2 * animationDurationSeconds) / 6).toFixed(3)}s`
+                `${((2.2 * animationDurationSeconds) / 6).toFixed(3)}s`,
               );
 
               letterKBottomLine.setAttribute(
                 "stroke-dashoffset",
-                `${letterKBottomDistance.toFixed(3)}`
+                `${letterKBottomDistance.toFixed(3)}`,
               );
 
               letterKBottomAnimation.setAttribute(
                 "values",
-                `${letterKBottomDistance.toFixed(3)};0`
+                `${letterKBottomDistance.toFixed(3)};0`,
               );
               break;
             case "hide":
               letterKBottomAnimation.setAttribute("fill", "freeze");
               letterKBottomAnimation.setAttribute(
                 "dur",
-                `${(animationDurationSeconds / 4).toFixed(3)}s`
+                `${(animationDurationSeconds / 4).toFixed(3)}s`,
               );
               letterKBottomAnimation.setAttribute(
                 "begin",
-                `${((2.2 * animationDurationSeconds) / 6).toFixed(3)}s`
+                `${((2.2 * animationDurationSeconds) / 6).toFixed(3)}s`,
               );
 
               letterKBottomLine.setAttribute(
                 "stroke-dashoffset",
-                `${(2 * letterKBottomDistance).toFixed(3)}`
+                `${(2 * letterKBottomDistance).toFixed(3)}`,
               );
 
               letterKBottomAnimation.setAttribute(
                 "values",
                 `${(2 * letterKBottomDistance).toFixed(
-                  3
-                )};${letterKBottomDistance.toFixed(3)}`
+                  3,
+                )};${letterKBottomDistance.toFixed(3)}`,
               );
               break;
             case "loop":
               letterKBottomAnimation.setAttribute("repeatCount", "indefinite");
               letterKBottomAnimation.setAttribute(
                 "dur",
-                `${(2 * animationDurationSeconds).toFixed(3)}s`
+                `${(2 * animationDurationSeconds).toFixed(3)}s`,
               );
               letterKBottomAnimation.setAttribute(
                 "keyTimes",
                 `0;${(2.2 / 12).toFixed(3)};${(2.2 / 12 + 1 / 8).toFixed(3)};${(
                   0.5 +
                   2.2 / 12
-                ).toFixed(3)};${(0.5 + 2.2 / 12 + 1 / 8).toFixed(3)};1`
+                ).toFixed(3)};${(0.5 + 2.2 / 12 + 1 / 8).toFixed(3)};1`,
               );
 
               letterKBottomLine.setAttribute(
                 "stroke-dashoffset",
-                `${letterKBottomDistance.toFixed(3)}`
+                `${letterKBottomDistance.toFixed(3)}`,
               );
 
               letterKBottomAnimation.setAttribute(
                 "values",
                 `${letterKBottomDistance.toFixed(
-                  3
+                  3,
                 )};${letterKBottomDistance.toFixed(
-                  3
+                  3,
                 )};0;0;${(-letterKBottomDistance).toFixed(
-                  3
-                )};${(-letterKBottomDistance).toFixed(3)}`
+                  3,
+                )};${(-letterKBottomDistance).toFixed(3)}`,
               );
               break;
           }
@@ -866,13 +869,13 @@
               0.1,
               colored,
               duration,
-              direction
+              direction,
             );
 
             const serializer = new XMLSerializer();
             const svgString = serializer.serializeToString(konnexLogo);
             const url = `data:image/svg;charset=utf-8,${encodeURIComponent(
-              svgString
+              svgString,
             )}`;
 
             const link = document.createElement("a");
