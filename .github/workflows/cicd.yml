@@ -1,0 +1,351 @@
+name: Build, Test and Deploy Pipeline
+
+on:
+  push:
+    branches: ["main"]
+    tags: ["v*.*.*"]
+  pull_request:
+    branches: ["main"]
+  workflow_dispatch:
+  release:
+    types: [published]
+
+jobs:
+  build:
+    name: 🔨 Build & Validate Application
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
+
+    steps:
+      - name: 📥 Checkout Repository Code
+        uses: actions/checkout@v4
+
+      - name: 🔧 Setup Go Runtime Environment
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.24"
+          cache: true
+
+      - name: 🥟 Setup Bun JavaScript Runtime
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: 💾 Cache Bun Dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.bun/install/cache
+          key: ${{ runner.os }}-bun-${{ hashFiles('**/bun.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-bun-
+
+      - name: 📦 Install Frontend Dependencies
+        run: bun install
+
+      - name: 📚 Install Backend Go Dependencies
+        run: go mod download
+
+      - name: 🔍 Scan Dependencies for Security Vulnerabilities
+        uses: snyk/actions/node@master
+        continue-on-error: true
+        with:
+          args: --severity-threshold=high
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+
+      - name: 🧪 Run TypeScript Type Checking
+        run: bun run type-check
+
+      - name: 💅 Verify Code Formatting
+        run: bun run format-check
+
+      # Add test step
+      # - name: 🧠 Run Automated Tests
+      #   run: bun run test || echo "No tests specified - continuing"
+
+      - name: 🏗️ Build Fullstack Application
+        run: bun run build
+
+      - name: 🔎 Run Code Linting Checks
+        run: bun run lint-check
+
+      - name: 📤 Upload Frontend Distribution Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-dist
+          path: dist
+
+      - name: 📤 Upload Go Binary Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: go-binaries
+          path: |
+            konnex
+
+  deploy-pages:
+    name: 🌐 Deploy to GitHub Pages
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    environment:
+      name: github-pages
+      url: ${{steps.gh_pages_deployment.outputs.page_url}}
+    permissions:
+      contents: write
+      pages: write
+      id-token: write
+    steps:
+      - name: 📥 Download Frontend Build Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-dist
+          path: dist
+
+      - name: 📝 Create SPA Fallback for Client-Side Routing
+        run: cp dist/index.html dist/404.html
+
+      - name: ⚙️ Configure GitHub Pages Environment
+        uses: actions/configure-pages@v5
+
+      - name: 📤 Upload Pages Deployment Artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: "./dist"
+
+      - name: 🚀 Deploy Static Assets to GitHub Pages
+        id: gh_pages_deployment
+        uses: actions/deploy-pages@v4
+
+  deploy-docker:
+    name: 🐳 Build & Publish Docker Image
+    needs: build
+    # Run for all branches and PRs, not just main and tags
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      pull-requests: read
+    steps:
+      - name: 📥 Checkout Repository Code
+        uses: actions/checkout@v4
+
+      - name: 🏷️ Extract Version Information
+        id: version
+        run: |
+          # For tags (releases)
+          if [[ $GITHUB_REF == refs/tags/* ]]; then
+            echo "TAG=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+          # For main branch
+          elif [[ $GITHUB_REF == refs/heads/main ]]; then
+            echo "TAG=latest" >> $GITHUB_OUTPUT
+          # For pull requests
+          elif [[ $GITHUB_REF == refs/pull/* ]]; then
+            PR_NUMBER=$(echo $GITHUB_REF | cut -d / -f 3)
+            echo "TAG=pr-${PR_NUMBER}" >> $GITHUB_OUTPUT
+          # For other branches
+          else
+            BRANCH_NAME=${GITHUB_REF#refs/heads/}
+            # Replace any characters not allowed in Docker tags with -
+            SAFE_BRANCH_NAME=$(echo $BRANCH_NAME | tr '/' '-' | tr '.' '-')
+            echo "TAG=branch-${SAFE_BRANCH_NAME}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: 🔑 Authenticate to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.GH_PACKAGES_USERNAME }}
+          password: ${{ secrets.GH_PACKAGES_PASSWORD }}
+          registry: ghcr.io
+
+      - name: 🛠️ Set Up Docker Buildx for Multi-Platform Builds
+        id: buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: 💾 Cache Docker Build Layers
+        uses: actions/cache@v4
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-
+
+      - name: 🔍 Scan Docker Image for Security Vulnerabilities
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: "fs"
+          format: "table"
+          exit-code: "0"
+          ignore-unfixed: true
+          severity: "CRITICAL,HIGH"
+
+      - name: 🏭 Build and Push Multi-Architecture Docker Image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: ghcr.io/yertools/konnex:${{ steps.version.outputs.TAG }}
+          builder: ${{ steps.buildx.outputs.name }}
+          platforms: linux/amd64,linux/arm64,linux/arm/v7,linux/386,linux/riscv64
+          cache-from: type=local,src=/tmp/.buildx-cache
+          cache-to: type=local,dest=/tmp/.buildx-cache
+
+  build-binaries:
+    name: 🛠️ Build Platform Binaries
+    runs-on: ubuntu-latest
+    needs: build
+    permissions:
+      contents: read
+      actions: write
+    strategy:
+      matrix:
+        os: [linux, windows, darwin, freebsd]
+        arch: [386, amd64, arm, arm64, riscv64]
+        exclude:
+          - os: windows
+            arch: arm
+          - os: windows
+            arch: riscv64
+          - os: darwin
+            arch: 386
+          - os: darwin
+            arch: arm
+          - os: darwin
+            arch: riscv64
+          - os: freebsd
+            arch: riscv64
+    env:
+      GO111MODULE: "on"
+    steps:
+      - name: 📥 Checkout Repository Code
+        uses: actions/checkout@v4
+
+      - name: 🔧 Setup Go Runtime Environment
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.24"
+          cache: true
+
+      - name: 📚 Install Backend Go Dependencies
+        run: go mod download
+
+      - name: 📥 Download Frontend Dist Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-dist
+          path: dist
+
+      - name: 🔍 Verify Dist Directory
+        run: |
+          echo "Content of dist directory:"
+          ls -la dist/
+          if [ ! -f "dist/index.html" ]; then
+            echo "Error: dist/index.html not found. Frontend build is missing!"
+            exit 1
+          fi
+
+      - name: 🔨 Build Backend for ${{ matrix.os }} ${{ matrix.arch }}
+        env:
+          GOOS: ${{ matrix.os }}
+          GOARCH: ${{ matrix.arch }}
+        run: |
+          mkdir -p build
+          BIN_NAME=konnex_${{ matrix.os }}_${{ matrix.arch }}
+          if [ "${{ matrix.os }}" = "windows" ]; then
+            BIN_NAME="${BIN_NAME}.exe"
+          fi
+          echo "Building for OS: $GOOS, Arch: $GOARCH -> $BIN_NAME"
+          go build -ldflags="-s -w" -o build/${BIN_NAME} ./main.go
+
+          # For non-Windows builds, make the binary executable
+          if [ "${{ matrix.os }}" != "windows" ]; then
+            chmod +x build/${BIN_NAME}
+          fi
+
+          ls -lah build/
+
+      - name: 📤 Upload Build Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.os }}-${{ matrix.arch }}
+          path: build/konnex_${{ matrix.os }}_${{ matrix.arch }}*
+          retention-days: 5
+
+  create-dist-artifact:
+    name: 📦 Create Frontend Dist Artifact
+    runs-on: ubuntu-latest
+    needs: build
+    permissions:
+      contents: read
+      actions: write
+    steps:
+      - name: 📥 Checkout Repository Code
+        uses: actions/checkout@v4
+
+      - name: 🥟 Setup Bun JavaScript Runtime
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: 💾 Cache Bun Dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.bun/install/cache
+          key: ${{ runner.os }}-bun-${{ hashFiles('**/bun.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-bun-
+
+      - name: 📦 Install Frontend Dependencies
+        run: bun install
+
+      - name: 🏗️ Build Frontend
+        run: bun run frontend:build
+
+      - name: 📤 Upload Dist Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-dist-standalone
+          path: dist
+          retention-days: 5
+
+  release-artifacts:
+    name: 🚀 Attach Artifacts to Release
+    needs: [build-binaries, create-dist-artifact]
+    if: github.event_name == 'release'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: 📥 Checkout Repository Code
+        uses: actions/checkout@v4
+
+      - name: 📥 Download All Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: release-artifacts
+
+      - name: 📝 Prepare Release Assets
+        run: |
+          mkdir -p release-assets
+
+          # Process binary files
+          find release-artifacts -type f -name "konnex_*" | while read file; do
+            cp "$file" release-assets/
+          done
+
+          # Pack frontend dist separately
+          if [ -d "release-artifacts/frontend-dist-standalone" ]; then
+            cd release-artifacts
+            zip -r frontend-dist.zip frontend-dist-standalone/
+            mv frontend-dist.zip ../release-assets/
+            cd ..
+          fi
+
+          ls -la release-assets/
+
+      - name: 📤 Upload Release Assets
+        uses: softprops/action-gh-release@v2
+        with:
+          files: release-assets/*

@@ -1,0 +1,10 @@
+/node_modules
+/dist
+
+/pb_data
+/pb_hooks
+/pb_migrations
+/pb_public
+
+/konnex
+/konnex.exe

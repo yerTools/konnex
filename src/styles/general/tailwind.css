@@ -1,0 +1,34 @@
+@import "tailwindcss";
+
+@layer theme, base, components, utilities;
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/preflight.css" layer(base);
+@import "tailwindcss/utilities.css" layer(utilities);
+
+@tailwind utilities;
+
+@plugin "@tailwindcss/typography";
+
+@plugin "tailwindcss-motion";
+@import "tailwindcss-intersect";
+@plugin "@kobalte/tailwindcss";
+
+/* https://daisyui.com/docs/config/ */
+@plugin "daisyui" {
+  themes:
+    solidarity-light --default,
+    solidarity-dark --prefersdark,
+    light,
+    dark,
+    cupcake,
+    synthwave,
+    retro,
+    cyberpunk,
+    nord,
+    pastel,
+    forest;
+  root: ":root";
+  logs: false;
+}
+
+@plugin "@iconify/tailwind4";

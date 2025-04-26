@@ -1,0 +1,85 @@
+@theme {
+  --font-sans:
+    "Source Sans 3", ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji",
+    "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  --font-serif:
+    "Source Serif 4", ui-serif, Georgia, Cambria, "Times New Roman", Times,
+    serif;
+  --font-mono:
+    "Source Code Pro", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+    "Liberation Mono", "Courier New", monospace;
+}
+
+/* https://daisyui.com/theme-generator/ */
+/* Solidarity Light Theme - inspired by left-wing and communist movements */
+@plugin "daisyui/theme" {
+  name: "solidarity-light";
+  default: true;
+  prefersdark: false;
+  color-scheme: "light";
+  --color-base-100: oklch(97% 0.013 17.38);
+  --color-base-200: oklch(93% 0.032 17.717);
+  --color-base-300: oklch(88% 0.062 18.334);
+  --color-base-content: oklch(39% 0.141 25.723);
+  --color-primary: oklch(57% 0.245 27.325);
+  --color-primary-content: oklch(97% 0.013 17.38);
+  --color-secondary: oklch(66.34% 0.153 47.51);
+  --color-secondary-content: oklch(27% 0.077 45.635);
+  --color-accent: oklch(88% 0.1521 98.16);
+  --color-accent-content: oklch(42% 0.095 57.708);
+  --color-neutral: oklch(20% 0.0943 28.76);
+  --color-neutral-content: oklch(93% 0.032 17.717);
+  --color-info: oklch(67% 0.182 276.935);
+  --color-info-content: oklch(25% 0.09 281.288);
+  --color-success: oklch(72% 0.219 149.579);
+  --color-success-content: oklch(26% 0.065 152.934);
+  --color-warning: oklch(85% 0.199 91.936);
+  --color-warning-content: oklch(44% 0.177 26.899);
+  --color-error: oklch(71% 0.194 13.428);
+  --color-error-content: oklch(25% 0.092 26.042);
+  --radius-selector: 2rem;
+  --radius-field: 1rem;
+  --radius-box: 0.25rem;
+  --size-selector: 0.25rem;
+  --size-field: 0.25rem;
+  --border: 1px;
+  --depth: 1;
+  --noise: 1;
+}
+
+/* https://daisyui.com/theme-generator/ */
+/* Solidarity Dark Theme - for left-wing, communist, and activist websites */
+@plugin "daisyui/theme" {
+  name: "solidarity-dark";
+  default: false;
+  prefersdark: true;
+  color-scheme: "dark";
+  --color-base-100: oklch(17.06% 0.0675 30.45);
+  --color-base-200: oklch(23.47% 0.0943 28.76);
+  --color-base-300: oklch(35.01% 0.1418 28.95);
+  --color-base-content: oklch(98% 0.026 102.212);
+  --color-primary: oklch(52.67% 0.2017 30.07);
+  --color-primary-content: oklch(96% 0.059 95.617);
+  --color-secondary: oklch(63.65% 0.1814 50.51);
+  --color-secondary-content: oklch(25% 0.092 26.042);
+  --color-accent: oklch(54% 0.2564 315.67);
+  --color-accent-content: oklch(94% 0.03 12.58);
+  --color-neutral: oklch(26% 0.0434 34.298);
+  --color-neutral-content: oklch(95% 0.038 75.164);
+  --color-info: oklch(67% 0.182 276.935);
+  --color-info-content: oklch(25% 0.09 281.288);
+  --color-success: oklch(72% 0.219 149.579);
+  --color-success-content: oklch(26% 0.065 152.934);
+  --color-warning: oklch(85% 0.199 91.936);
+  --color-warning-content: oklch(44% 0.177 26.899);
+  --color-error: oklch(71% 0.194 13.428);
+  --color-error-content: oklch(25% 0.092 26.042);
+  --radius-selector: 1rem;
+  --radius-field: 0.25rem;
+  --radius-box: 0.25rem;
+  --size-selector: 0.25rem;
+  --size-field: 0.25rem;
+  --border: 1px;
+  --depth: 0;
+  --noise: 1;
+}
