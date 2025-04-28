@@ -88,7 +88,7 @@
     "terser": "^5.39.0",
     "typescript": "^5.8.3",
     "unplugin-icons": "^22.1.0",
-    "unplugin-lightningcss": "^0.3.2",
+    "unplugin-lightningcss": "^0.3.3",
     "vite": "^6.3.3",
     "vite-plugin-compression": "^0.5.1",
     "vite-plugin-lqip": "^0.0.5",
